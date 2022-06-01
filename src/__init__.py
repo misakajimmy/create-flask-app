@@ -40,6 +40,7 @@ def before_request():
 
 
 def prestart_check(app):
+    print(app.config)
     """检测是否满足启动条件"""
     if not app.config.get("SECRET_KEY"):
         app.logger.error("Not found secret_key")

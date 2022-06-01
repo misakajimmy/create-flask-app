@@ -57,7 +57,6 @@ app = create_app('development')
 
 
 if __name__ == '__main__':
-    print(app)
     app.run()
 #     manager.add_command("run", Server("0.0.0.0", port=8850))
 #     if len(sys.argv) == 1:
