@@ -21,11 +21,10 @@ app = create_app('development')
 #
 #
 # @manager.command
-# def init_db():
-#     """初始化数据库基本表结构"""
-#     print("库表结构初始化...", end="")
-#     db.create_all()
-#     print("完成")
+def init_db():
+    """初始化数据库基本表结构"""
+    print("库表结构初始化...", end="")
+    print("完成")
 #
 #
 # @manager.command

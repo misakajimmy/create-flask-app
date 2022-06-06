@@ -14,9 +14,8 @@ from itsdangerous import URLSafeSerializer
 from . import cache
 from .tool import get_client_ident
 
-
 # token名称
-TOKEN_NAME = "token"
+TOKEN_NAME = "Authorization"
 # token缓存前缀
 TOKEN_PREFIX = "user_token_"
 # token缓存时间
@@ -43,7 +42,7 @@ def create_token(user_id, password, client_info=""):
     token_lifetime = current_app.config.get("TOKEN_LIFETIME", TOKEN_LIFETIME)
     key = current_app.config.get("SECRET_KEY", '')
     token_serializer = URLSafeSerializer(key)
-    token = token_serializer.dumps((user_id, password, user_ident, token_lifetime, create_time))
+    token = token_serializer.dumps((str(user_id), password, user_ident, token_lifetime, create_time))
     cache.set("{0}{1}".format(TOKEN_PREFIX, user_id), token, timeout=token_lifetime)
     return token
 
@@ -58,10 +57,12 @@ def clear_token(user_id):
 
 def need_token(func):
     """校验token合法性"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         token_id = current_app.config.get("TOKEN_NAME", TOKEN_NAME)
         token = request.headers.get(token_id) or g.request_data.get(token_id)
+        token = token[7:]
         if token is None:
             raise TokenErr("TOKEN_NOT_FOUND", "缺少登录凭证")
 
@@ -83,7 +84,8 @@ def need_token(func):
         if cached_token:
             if not compare_digest(cached_token, token):  # token不同时，把cached_token解析出来比对哪里有变化，以便给出精准提示
                 try:
-                    _user_id, _password, _user_ident, _token_lifetime, _create_time = token_serializer.loads(cached_token)
+                    _user_id, _password, _user_ident, _token_lifetime, _create_time = token_serializer.loads(
+                        cached_token)
                 except Exception:
                     raise TokenErr("TOKEN_INVALID", "登录凭证已失效", user_id=user_id)
                 if user_id != _user_id or password != _password:
@@ -103,4 +105,5 @@ def need_token(func):
         g.user_login_time = create_time
 
         return func(*args, **kwargs)
+
     return wrapper

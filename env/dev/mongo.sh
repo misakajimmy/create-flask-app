@@ -1,0 +1,1 @@
+docker run --name mongodb -d -e MONGO_INITDB_ROOT_USERNAME=misaka -e MONGO_INITDB_ROOT_PASSWORD=123abc456d -p 27017:27017 mongo:4.4.14-focal

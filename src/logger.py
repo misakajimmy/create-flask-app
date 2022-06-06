@@ -13,7 +13,7 @@ from flask.logging import default_handler
 class Logger(object):
     def __init__(self, app=None, log_dir=None, log_level=None, log_keep_day=None):
         self.log_dir = "logs"
-        self.log_level = 20     # CRITICAL:50,ERROR:40,WARNING:30,INFO:20,DEBUG:10,NOTSET:0
+        self.log_level = 20  # CRITICAL:50,ERROR:40,WARNING:30,INFO:20,DEBUG:10,NOTSET:0
         self.log_keep_day = 30
 
         self.app = app
@@ -40,7 +40,8 @@ class Logger(object):
 
         formatter = Formatter('%(asctime)s|%(levelname)s|%(pathname)s(%(lineno)d)|%(funcName)s|%(message)s')
         log_file = os.path.join(log_path, app.name + '.log')
-        log_file_handler = handlers.TimedRotatingFileHandler(log_file, when="D", backupCount=self.log_keep_day)
+        log_file_handler = handlers.TimedRotatingFileHandler(
+            log_file, when="D", encoding='utf-8', backupCount=self.log_keep_day)
         log_file_handler.setFormatter(formatter)
         app.logger.addHandler(log_file_handler)
         app.logger.setLevel(int(self.log_level))

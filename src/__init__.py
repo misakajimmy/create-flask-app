@@ -9,14 +9,14 @@ import re
 import time
 
 from flask import Flask, g, request
-from flask_sqlalchemy import SQLAlchemy
+from flask_mongoengine import MongoEngine
 from werkzeug.utils import import_string
 
 from .config import config
 from .logger import Logger
 from .cache import RedisCache as Cache
 
-db = SQLAlchemy()
+db = MongoEngine()
 logger = Logger()
 cache = Cache()
 
@@ -40,25 +40,27 @@ def before_request():
 
 
 def prestart_check(app):
-    print(app.config)
     """检测是否满足启动条件"""
     if not app.config.get("SECRET_KEY"):
         app.logger.error("Not found secret_key")
         return False
-    if not app.config.get("SQLALCHEMY_DATABASE_URI"):
+    if not app.config.get("MONGODB_SETTINGS"):
         app.logger.error("Not found database_uri")
         return False
-    with app.app_context():
-        try:
-            db.session.execute("show databases;")
-        except Exception as e:
-            app.logger.error("Database connection failed, %s", e)
-            return False
-        try:
-            cache.get("")
-        except Exception as e:
-            app.logger.error("Cache connection failed, %s", e)
-            return False
+    print(app.config.get("MONGODB_SETTINGS"))
+    # with app.app_context():
+    #     try:
+    #         res = db.session.execute("show users")
+    #         print(res)
+    #     except Exception as e:
+    #         print("Database connection failed, %s"% e)
+    #         app.logger.error("Database connection failed, %s", e)
+    #         return False
+    #     try:
+    #         cache.get("")
+    #     except Exception as e:
+    #         app.logger.error("Cache connection failed, %s", e)
+    #         return False
     return True
 
 
@@ -83,6 +85,7 @@ def create_app(env='development'):
     # 加载钩子函数
     app.before_request(before_request)
 
+    print(prestart_check(app))
     # # 启动前检测
     # if not prestart_check(app):
     #     sys.exit(1)

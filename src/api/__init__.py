@@ -19,7 +19,7 @@ api = Blueprint("api", __name__, url_prefix="/api")
 
 # 公共参数列表
 COMMON_PARAM_LIST = [
-        {"name": "app_channel", "type": "str", "desc": "APP渠道", "reg": r"\w+", "required": True},
+        {"name": "app_channel", "type": "str", "desc": "APP渠道", "reg": r"\w+", "required": False},
         {"name": "app_version", "type": "str", "desc": "APP版本", "reg": r"\w+", "required": False},
         {"name": "os_type", "type": "str", "desc": "系统类型", "reg": r"\w+", "required": False},
         {"name": "os_version", "type": "str", "desc": "系统版本", "reg": r"\w+", "required": False},
@@ -69,6 +69,7 @@ def error_token(error):
 
 @api.errorhandler(Exception)
 def catch_error(error):
+    print(error)
     file, line, func, _ = get_error_info()
     current_app.logger.error('代码错误：{0}, {1}({2})[{3}]'.format(str(error), file, line, func))
     return api_return("ERR", "服务器内部异常")
@@ -83,7 +84,7 @@ def need_login(func):
         if not user_id:
             raise TokenErr("TOKEN_USER_ERROR", "无效的用户")
 
-        user = UserInfo.query.filter_by(id=user_id).first()
+        user = UserInfo.objects(id=user_id).first()
         if user is None:
             raise TokenErr("TOKEN_USER_ERROR", "无效的用户", user_id=user_id)
         if user.status != 1:

@@ -12,18 +12,18 @@ class Config:
     APP_UPDATE_TIME = "2022-06-01 00:15:23"
     SECRET_KEY = "hard to guess string"
 
-    SQLALCHEMY_POOL_SIZE = 100      # 连接池个数
-    SQLALCHEMY_POOL_TIMEOUT = 30    # 超时时间，秒
+    SQLALCHEMY_POOL_SIZE = 100  # 连接池个数
+    SQLALCHEMY_POOL_TIMEOUT = 30  # 超时时间，秒
     SQLALCHEMY_POOL_RECYCLE = 3600  # 空连接回收时间，秒
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
-    REDIS_KEY_PREFIX = APP_NAME + '_'   # redis全局前缀
+    REDIS_KEY_PREFIX = APP_NAME + '_'  # redis全局前缀
 
-    SMS_CODE_INTERVAL_TIME = 60             # 验证码获取间隔
-    SMS_CODE_VALID_TIME = 10 * 60           # 验证码有效时间，秒
-    MAX_REGISTER_CODE_ONE_DAY = 5           # 一天内最多获得几次注册验证码
-    MAX_RESET_CODE_ONE_DAY = 5              # 一天内最多获得几次重置密码验证码
-    MAX_CHANGE_ACCOUNT_CODE_ONE_DAY = 1     # 一天内最多获得几次重置账号验证码
+    SMS_CODE_INTERVAL_TIME = 60  # 验证码获取间隔
+    SMS_CODE_VALID_TIME = 10 * 60  # 验证码有效时间，秒
+    MAX_REGISTER_CODE_ONE_DAY = 5  # 一天内最多获得几次注册验证码
+    MAX_RESET_CODE_ONE_DAY = 5  # 一天内最多获得几次重置密码验证码
+    MAX_CHANGE_ACCOUNT_CODE_ONE_DAY = 1  # 一天内最多获得几次重置账号验证码
 
     OSS_ACCESS_KEY_ID = "xx"
     OSS_ACCESS_KEY_SECRET = "xx"
@@ -35,7 +35,13 @@ class DevelopmentConfig(Config):
     ENV = "development"
     DEBUG = True
     LOG_LEVEL = 10
-    SQLALCHEMY_DATABASE_URI = "mysql://pyapi_dev_user:pyapi_dev_pwd_123@127.0.0.1:3306/pyapi_dev?charset=utf8mb4"
+    MONGODB_SETTINGS = {
+        'db': 'test',
+        'host': '127.0.0.1',
+        'port': 27017,
+        'username': 'misaka',
+        'password': '123abc456d'
+    }
     REDIS_URI = "redis://localhost:6379/0"
 
 

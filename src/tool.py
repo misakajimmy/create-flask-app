@@ -47,7 +47,6 @@ def is_phone(var):
     regexp = r"^(0[0-9]{2,3}\-?)?([2-9][0-9]{6,7})+(\-[0-9]{1,4})?$"
     return re.search(regexp, str(var))
 
-
 def is_mobile(var):
     if var is None:
         return False
