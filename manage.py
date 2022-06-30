@@ -56,7 +56,7 @@ def init_db():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=8090)
 #     manager.add_command("run", Server("0.0.0.0", port=8850))
 #     if len(sys.argv) == 1:
 #         sys.argv.extend(["run", "--threaded"])

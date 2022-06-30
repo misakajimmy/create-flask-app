@@ -72,7 +72,7 @@ def catch_error(error):
     print(error)
     file, line, func, _ = get_error_info()
     current_app.logger.error('代码错误：{0}, {1}({2})[{3}]'.format(str(error), file, line, func))
-    return api_return("ERR", "服务器内部异常")
+    return api_return("ERR", "未知错误")
 
 
 def need_login(func):
@@ -108,3 +108,4 @@ def logout_user():
 
 # 导入蓝图要加载的接口文件
 from . import base
+from . import twins

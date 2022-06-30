@@ -18,7 +18,7 @@ RESPONSE_CODE_LIST = {
     "OK": (0, "成功"),
     "SUCCESS": (0, "成功"),
     "ERROR": (1, "错误"),
-    "FAILED": (1, "失败"),
+    # "FAILED": (1, "失败"),
 
     "DB_CONN_FAILED": (10, "数据库连接失败"),
     "SQL_ERROR": (11, "SQL错误"),

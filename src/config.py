@@ -7,10 +7,10 @@
 
 
 class Config:
-    APP_NAME = "twinshub_dev"
-    APP_VERSION = "0123456789"
-    APP_UPDATE_TIME = "2022-06-01 00:15:23"
-    SECRET_KEY = "hard to guess string"
+    APP_NAME = 'twinshub_dev'
+    APP_VERSION = '0123456789'
+    APP_UPDATE_TIME = '2022-06-01 00:15:23'
+    SECRET_KEY = 'hard to guess string'
 
     SQLALCHEMY_POOL_SIZE = 100  # 连接池个数
     SQLALCHEMY_POOL_TIMEOUT = 30  # 超时时间，秒
@@ -25,16 +25,25 @@ class Config:
     MAX_RESET_CODE_ONE_DAY = 5  # 一天内最多获得几次重置密码验证码
     MAX_CHANGE_ACCOUNT_CODE_ONE_DAY = 1  # 一天内最多获得几次重置账号验证码
 
-    OSS_ACCESS_KEY_ID = "xx"
-    OSS_ACCESS_KEY_SECRET = "xx"
-    OSS_ACCESS_ENDPOINT = "xx"
-    OSS_AVATAR_BUCKET_NAME = "dev_avatar"
+    OSS_ACCESS_KEY_ID = 'xx'
+    OSS_ACCESS_KEY_SECRET = 'xx'
+    OSS_ACCESS_ENDPOINT = 'xx'
+    OSS_AVATAR_BUCKET_NAME = 'dev_avatar'
 
 
 class DevelopmentConfig(Config):
-    ENV = "development"
+    ENV = 'development'
     DEBUG = True
     LOG_LEVEL = 10
+    TMP_DIR = './tmp'
+    MINIO_URL = '127.0.0.1:9000'
+    MINIO_ACCESS_KEY = 'Hu1ae8kSGt8TJtdt'
+    MINIO_SECRET_KEY = '177etazn0IK2awQ43AvURa20oNs4j2Tw'
+    MINIO_DIST_URL = 'http://127.0.0.1:9000/'
+    MINIO_AVATAR_BUCKET = 'dev-avatar'
+    MINIO_MODEL_IMAGE_BUCKET = 'dev-model-image'
+    MINIO_PACKAGE_DOWNLOAD_BUCKET = 'dev-package-download'
+    MINIO_3D_MODEL = 'dev-3d-model'
     MONGODB_SETTINGS = {
         'db': 'test',
         'host': '127.0.0.1',
@@ -42,24 +51,24 @@ class DevelopmentConfig(Config):
         'username': 'misaka',
         'password': '123abc456d'
     }
-    REDIS_URI = "redis://localhost:6379/0"
+    REDIS_URI = 'redis://localhost:6379/0'
 
 
 class TestingConfig(Config):
     TESTING = True
     LOG_LEVEL = 10
-    SQLALCHEMY_DATABASE_URI = "mysql://pyapi_test_user:pyapi_test_pwd_123@127.0.0.1:3306/pyapi_test?charset=utf8mb4"
-    REDIS_URI = "redis://localhost:6379/0"
+    SQLALCHEMY_DATABASE_URI = 'mysql://pyapi_test_user:pyapi_test_pwd_123@127.0.0.1:3306/pyapi_test?charset=utf8mb4'
+    REDIS_URI = 'redis://localhost:6379/0'
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = "mysql://user_name:user_pwd@127.0.0.1:3306/db_name?charset=utf8mb4"
-    REDIS_URI = "redis://localhost:6379/0"
+    SQLALCHEMY_DATABASE_URI = 'mysql://user_name:user_pwd@127.0.0.1:3306/db_name?charset=utf8mb4'
+    REDIS_URI = 'redis://localhost:6379/0'
 
 
 config = {
-    "development": DevelopmentConfig,
-    "testing": TestingConfig,
-    "production": ProductionConfig,
-    "default": DevelopmentConfig
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'production': ProductionConfig,
+    'default': DevelopmentConfig
 }

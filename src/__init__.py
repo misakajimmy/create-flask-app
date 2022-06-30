@@ -11,6 +11,7 @@ import time
 from flask import Flask, g, request
 from flask_mongoengine import MongoEngine
 from werkzeug.utils import import_string
+from flask_minio import Minio
 
 from .config import config
 from .logger import Logger
@@ -19,6 +20,7 @@ from .cache import RedisCache as Cache
 db = MongoEngine()
 logger = Logger()
 cache = Cache()
+storage = Minio()
 
 
 def before_request():
@@ -47,7 +49,13 @@ def prestart_check(app):
     if not app.config.get("MONGODB_SETTINGS"):
         app.logger.error("Not found database_uri")
         return False
-    print(app.config.get("MONGODB_SETTINGS"))
+    bucket_name = app.config.get('MINIO_MODEL_IMAGE_BUCKET')
+    if not storage.client.bucket_exists(bucket_name):
+        storage.client.make_bucket(bucket_name)
+    bucket_name = app.config.get('MINIO_PACKAGE_DOWNLOAD_BUCKET')
+    if not storage.client.bucket_exists(bucket_name):
+        storage.client.make_bucket(bucket_name)
+    # res = storage.connection.bucket_exists(bucket_name)
     # with app.app_context():
     #     try:
     #         res = db.session.execute("show users")
@@ -76,6 +84,7 @@ def create_app(env='development'):
     logger.init_app(app)
     db.init_app(app)
     cache.init_app(app)
+    storage.init_app(app)
 
     # 加载蓝图模块
     blueprints = ['src.api:api']

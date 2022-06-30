@@ -19,7 +19,6 @@ from dateutil.relativedelta import relativedelta
 from hashlib import sha512
 from random import choice
 
-
 from flask import request
 
 
@@ -46,6 +45,7 @@ def is_phone(var):
         return False
     regexp = r"^(0[0-9]{2,3}\-?)?([2-9][0-9]{6,7})+(\-[0-9]{1,4})?$"
     return re.search(regexp, str(var))
+
 
 def is_mobile(var):
     if var is None:
@@ -88,7 +88,7 @@ def is_date(var):
     if re.search(regexp, str(var)):
         try:
             return datetime.strptime(re.sub(r'[/.]', '-', str(var)), '%Y-%m-%d')
-        except ValueError:    # 防止出现2018.06.31这种错误
+        except ValueError:  # 防止出现2018.06.31这种错误
             return False
     else:
         return False
@@ -125,6 +125,23 @@ def is_sms_code(var):
     return re.search(regexp, str(var))
 
 
+def is_version(var):
+    if var is None:
+        return False
+    regexp = r"^\d+.\d+.\d+$"
+    return re.search(regexp, str(var))
+
+
+# check is version1 greater than version2
+def compare_version(version1, version2):
+    v1 = version1.split('.')
+    v2 = version2.split('.')
+    for i in range(3):
+        if int(v1[i]) < int(v2[i]):
+            return False
+    return True
+
+
 def get_error_info():
     """输出最近一个错误栈的file, line, func, code"""
     error_info = traceback.format_exception(*sys.exc_info(), -1)[1]
@@ -136,7 +153,8 @@ def get_error_info():
 def get_datetime(now=None, year=0, month=0, week=0, day=0, hour=0, minute=0, second=0):
     if now is None:
         now = datetime.now()
-    res = now + relativedelta(years=int(year), months=int(month), weeks=int(week), days=int(day), hours=int(hour), minutes=int(minute), seconds=int(second))
+    res = now + relativedelta(years=int(year), months=int(month), weeks=int(week), days=int(day), hours=int(hour),
+                              minutes=int(minute), seconds=int(second))
     return res
 
 
@@ -191,8 +209,8 @@ def get_age(born, today=None):
 
     try:
         birthday = born.replace(year=today.year)
-    except ValueError:      # 防止非闰年的2月29
-        birthday = born.replace(year=today.year, day=born.day-1)
+    except ValueError:  # 防止非闰年的2月29
+        birthday = born.replace(year=today.year, day=born.day - 1)
     if birthday > today:
         return today.year - born.year - 1
     else:
@@ -250,7 +268,7 @@ def datediff(var1, var2):
         date2 = datetime.strptime(var2, "%Y-%m-%d")
     except Exception:
         return 0
-    return (date1-date2).days
+    return (date1 - date2).days
 
 
 def datetimediff(var1, var2):
@@ -261,7 +279,7 @@ def datetimediff(var1, var2):
         datetime2 = datetime.strptime(var2, "%Y-%m-%d %H:%M:%S")
     except Exception:
         return 0
-    return int((datetime1-datetime2).total_seconds())
+    return int((datetime1 - datetime2).total_seconds())
 
 
 def db_to_dict(inst, cls):

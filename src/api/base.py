@@ -4,12 +4,14 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 账号相关基本接口
 """
+import io
 import re
+import uuid
 from datetime import datetime
 
 from flask import g, current_app, request
 
-from .. import db
+from .. import db, storage
 from ..tool import is_mobile, is_password, is_sms_code, is_date, get_datetime, create_random_num, create_uuid_str, \
     datediff
 from ..service import send_sms_by_alisms, upload_file_to_oss, delete_file_from_oss
@@ -22,7 +24,7 @@ from . import api, need_login, login_user, logout_user
 ###################################################################
 # 注册接口
 ###################################################################
-@api.route('/get_register_code/', methods=['POST'])
+@api.route('/get_register_code', methods=['POST'])
 def get_register_code():
     """
     #group  基础
@@ -88,7 +90,7 @@ def get_register_code():
         return api_return('FAILED', '获取失败')
 
 
-@api.route('/register/', methods=['POST'])
+@api.route('/register', methods=['POST'])
 def register():
     """
     #group  基础
@@ -187,7 +189,7 @@ def register():
 ###################################################################
 # 登录接口
 ###################################################################
-@api.route('/login/', methods=['POST'])
+@api.route('/login', methods=['POST'])
 def login():
     """
     #group  基础
@@ -263,7 +265,7 @@ def login():
     return api_return('OK', '登录成功', login_info)
 
 
-@api.route('/logout/', methods=['POST'])
+@api.route('/logout', methods=['POST'])
 @need_login
 def logout():
     """
@@ -286,7 +288,7 @@ def logout():
 ###################################################################
 # 用户信息管理接口
 ###################################################################
-@api.route('/get_user_info/', methods=['POST'])
+@api.route('/get_user_info', methods=['GET'])
 @need_login
 def get_user_info():
     """
@@ -344,7 +346,7 @@ def get_user_info():
     return api_return('OK', '查询成功', data)
 
 
-@api.route('/update_user/', methods=['POST'])
+@api.route('/update_user', methods=['POST'])
 @need_login
 def update_user():
     """
@@ -404,7 +406,7 @@ def update_user():
         return api_return('FAILED', '修改失败')
 
 
-@api.route('/update_password/', methods=['POST'])
+@api.route('/update_password', methods=['POST'])
 @need_login
 def update_password():
     """
@@ -447,7 +449,7 @@ def update_password():
         return api_return('FAILED', '修改失败')
 
 
-@api.route('/upload_avatar/', methods=['POST'])
+@api.route('/upload_avatar', methods=['POST'])
 @need_login
 def upload_avatar():
     """
@@ -466,31 +468,37 @@ def upload_avatar():
         }
     }
     """
+    bucket_name = current_app.config.get('MINIO_AVATAR_BUCKET')
     avatar_file = request.files.get('avatar_file')
 
+    if not storage.client.bucket_exists(bucket_name):
+        storage.client.make_bucket(bucket_name)
     if not avatar_file:
         current_app.logger.debug('用户头像错误: avatar file account:%s', g.user.account)
         return api_return('PARAM_ERROR', '用户头像错误')
 
-    bucket_name = current_app.config.get('OSS_AVATAR_BUCKET_NAME', 'dev_avatar')
-    upload_url = upload_file_to_oss(bucket_name, avatar_file)
-    if not upload_url:
-        current_app.logger.error('文件上传失败: account:%s', g.user.account)
-        return api_return('FAILED', '文件上传失败')
+    object_name = str(uuid.uuid1())
+    data = avatar_file.stream.read()
+
+    result = storage.client.put_object(
+        bucket_name=bucket_name, object_name=object_name, data=io.BytesIO(data),
+        length=len(data),
+        content_type=avatar_file.content_type, )
 
     # 删除旧的头像
     if g.user.avatar_url:
         old_avatar_key = g.user.avatar_url.split('/')[-1]
-        result = delete_file_from_oss(bucket_name, old_avatar_key)
+        result = storage.client.remove_object(bucket_name=bucket_name, object_name=old_avatar_key)
         if not result:
             current_app.logger.error('旧头像删除失败: account:%s, old_avatar:%s', g.user.account, old_avatar_key)
 
     # 将地址替换为自有域名，然后更新头像地址
-    own_avatar_domain = current_app.config.get('OWN_AVATAR_DOMAIN')
-    upload_url = re.sub('://.*/', '://{0}/'.format(own_avatar_domain), upload_url) if own_avatar_domain else upload_url
+    own_avatar_domain = current_app.config.get('MINIO_DIST_URL')
+    # upload_url = own_avatar_domain + bucket_name + '/' + object_name if own_avatar_domain else object_name
+    upload_url = own_avatar_domain + bucket_name + '/' + object_name
     g.user.avatar_url = upload_url
     try:
-        db.session.commit()
+        g.user.save()
         current_app.logger.info('上传成功: account:%s, avatar_url:%s', g.user.account, g.user.avatar_url)
         return api_return('OK', '上传成功', {'avatar_url': g.user.avatar_url})
     except Exception as e:
@@ -501,7 +509,7 @@ def upload_avatar():
 ###################################################################
 # 重置密码接口
 ###################################################################
-@api.route('/get_reset_password_code/', methods=['POST'])
+@api.route('/get_reset_password_code', methods=['POST'])
 def get_reset_password_code():
     """
     #group  基础
@@ -572,7 +580,7 @@ def get_reset_password_code():
         return api_return('FAILED', '获取失败')
 
 
-@api.route('/reset_password/', methods=['POST'])
+@api.route('/reset_password', methods=['POST'])
 def reset_password():
     """
     #group  基础
@@ -669,7 +677,7 @@ def reset_password():
 ###################################################################
 # 更换账号接口
 ###################################################################
-@api.route('/get_change_phone_code/', methods=['POST'])
+@api.route('/get_change_phone_code', methods=['POST'])
 @need_login
 def get_change_account_code():
     """
@@ -746,7 +754,7 @@ def get_change_account_code():
         return api_return('FAILED', '获取失败')
 
 
-@api.route('/change_phone/', methods=['POST'])
+@api.route('/change_phone', methods=['POST'])
 @need_login
 def change_account():
     """

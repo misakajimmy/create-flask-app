@@ -62,9 +62,9 @@ def need_token(func):
     def wrapper(*args, **kwargs):
         token_id = current_app.config.get("TOKEN_NAME", TOKEN_NAME)
         token = request.headers.get(token_id) or g.request_data.get(token_id)
-        token = token[7:]
         if token is None:
             raise TokenErr("TOKEN_NOT_FOUND", "缺少登录凭证")
+        token = token[7:]
 
         # 解析token
         key = current_app.config.get("SECRET_KEY", "")
