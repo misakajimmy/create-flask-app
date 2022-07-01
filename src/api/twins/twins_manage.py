@@ -316,7 +316,7 @@ def get_latest_model_domain_static():
     industry = str(g.request_data.get('industry', '')).strip()
     latest_package = ModelPackage.objects(is_last=True).all_fields()
     if industry:
-        industry = TwinsIndustry.objects().first()
+        industry = TwinsIndustry.objects(name=industry).first()
         scenes = TwinsScene.objects(industry=industry).all_fields()
     else:
         scenes = TwinsScene.objects().all_fields()
