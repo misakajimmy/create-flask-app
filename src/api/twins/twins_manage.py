@@ -325,7 +325,7 @@ def get_latest_model_domain_static():
         primary_num, operational_num, control_num = scene.domain_num(latest_package=latest_package)
         res.append({
             'scene': scene.name,
-            'package': len(latest_package['models']),
+            'package': len(scene.last.models),
             'model': {
                 'primary': primary_num,
                 'operational': operational_num,
