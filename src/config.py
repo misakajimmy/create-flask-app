@@ -36,17 +36,17 @@ class DevelopmentConfig(Config):
     DEBUG = True
     LOG_LEVEL = 10
     TMP_DIR = './tmp'
-    MINIO_URL = '127.0.0.1:9000'
+    MINIO_URL = '10.66.15.200:9000'
     MINIO_ACCESS_KEY = 'Hu1ae8kSGt8TJtdt'
     MINIO_SECRET_KEY = '177etazn0IK2awQ43AvURa20oNs4j2Tw'
-    MINIO_DIST_URL = 'http://127.0.0.1:9000/'
+    MINIO_DIST_URL = 'http://10.66.15.200:9000/'
     MINIO_AVATAR_BUCKET = 'dev-avatar'
     MINIO_MODEL_IMAGE_BUCKET = 'dev-model-image'
     MINIO_PACKAGE_DOWNLOAD_BUCKET = 'dev-package-download'
     MINIO_3D_MODEL = 'dev-3d-model'
     MONGODB_SETTINGS = {
         'db': 'test',
-        'host': '127.0.0.1',
+        'host': '10.66.15.200',
         'port': 27017,
         'username': 'misaka',
         'password': '123abc456d'
@@ -57,12 +57,12 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     LOG_LEVEL = 10
-    SQLALCHEMY_DATABASE_URI = 'mysql://pyapi_test_user:pyapi_test_pwd_123@127.0.0.1:3306/pyapi_test?charset=utf8mb4'
+    SQLALCHEMY_DATABASE_URI = 'mysql://pyapi_test_user:pyapi_test_pwd_123@10.66.15.200:3306/pyapi_test?charset=utf8mb4'
     REDIS_URI = 'redis://localhost:6379/0'
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'mysql://user_name:user_pwd@127.0.0.1:3306/db_name?charset=utf8mb4'
+    SQLALCHEMY_DATABASE_URI = 'mysql://user_name:user_pwd@10.66.15.200:3306/db_name?charset=utf8mb4'
     REDIS_URI = 'redis://localhost:6379/0'
 
 
