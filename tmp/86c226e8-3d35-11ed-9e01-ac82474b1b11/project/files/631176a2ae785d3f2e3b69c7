@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import pandas as pd
+import numpy as np
+import logging
+import traceback
+import json
+import requests
+
+from digital_machine.batch import MetricName
+from digital_machine.batch.batch_context import BatchContext, MetricName, JobConfig
+
+def query_primary_metric(batch_context, class_, domain):
+    """
+    Params:
+        batch_context:
+        class_:
+        domain:
+    """
+    primary_domain_dict = {}
+    
+    for instance in batch_context.find_instances(class_):
+        instance_key = instance.key.split('|')[-1]
+        # logging.error("try to query primary domain of %s", instance.key)
+        
+        if instance_key[-1] == "e" and instance.key != "steel_c|steel_d|steel_3_p|cvt_1_e":
+            try:
+                instance_dict = instance.get_domain(domain = domain)
+            except:
+                instance_dict = {}
+                logging.error("instance: %s, primary data read failed!",instance_key)
+                logging.error(str(traceback.format_exc()))
+        else:
+            instance_dict = {}
+            
+        if len(instance_dict) == 0:
+            logging.error("instance: %s, no primary data to read!", instance_key)
+        else:
+            # logging.error("query_write_api Query primary data of %s, doamin: %s", instance_key, domain)
+
+            primary_domain_dict[instance_key] = instance_dict
+
+    return primary_domain_dict
+
+def write_primary_metric(batch_context, class_, domain, set_domain_metric_list):
+    """
+    Params:
+        batch_context:
+        class_:
+        domain:
+        set_domain_metric_list:
+                                {
+                                instance:{
+                                    "metric1": value1,
+                                    "metric2": value2
+                                }}
+    """
+    # instance_dict = {}
+    for instance in batch_context.find_instances(class_):
+        instance_key = instance.key.split("|")[-1]
+        # logging.error("geo of %s = %s", instance_key, instance.key)
+
+        if instance_key in set_domain_metric_list and instance.key != "steel_c|steel_d|steel_3_p|cvt_1_e":
+            try:
+                domain_value = instance.get_domain(domain = domain)
+
+                if len(set_domain_metric_list) == 0:
+                    logging.error("no primary data to write!")
+                else:
+                    # logging.error("instance: %s, primary_domain_value=%s",instance_key, domain_value )
+
+                    for key, value in set_domain_metric_list[instance_key].items():
+                        # logging.error("instance: %s, original %s value = %s", instance_key, key, domain_value[key])
+                        domain_value[key] = value
+                        # logging.error("instance: %s, set new %s value = %s", instance_key, key, value)
+                    instance.set_domain(domain = domain, value = domain_value)
+                    get_domain_value = instance.get_domain(domain = domain)
+                    # instance_dict[instance_key] = get_domain_value
+                    logging.error("set_domain have write metric value in MongoDB, instance: %s, primary_domain_value: %s", instance_key, get_domain_value)
+            except:
+                logging.error("instance of %s write primary domain failed!", instance.key)
+                logging.error(str(traceback.format_exc()))
+
+def query_timeseries_data(batch_context, class_, metric_dict, timestamp, aggregation):
+    """
+    metric_dict = {
+        "Domain.metric": {
+            "resolution": "5s",
+            "interval_from": 60,
+            "interval_to": -5,
+            "type": "current"
+        }
+    }
+    """
+
+    current_df = pd.DataFrame()
+    prediction_df = pd.DataFrame()
+    # logging.error("instance list = %s", batch_context.find_instances(class_))
+    for instance in set(batch_context.find_instances(class_)):
+    
+        instance_key = instance.key.split('|')[-1]
+
+        # logging.error("query instance=%s, metric_dict=%s", instance_key, metric_dict)
+        for metric in metric_dict:
+
+            temp_df = pd.DataFrame()
+            try:
+                metric_df = instance.query_timeseries(
+                    metric = MetricName.parse(metric),
+                    resolution = metric_dict[metric]["resolution"],
+                    _from = timestamp - metric_dict[metric]["interval_from"],
+                    _to = timestamp - metric_dict[metric]["interval_to"],
+                    aggregation = aggregation,
+                    column = instance_key + "_" + metric
+                )
+                # logging.error("dttest query_write_api %s query result=%s", metric, metric_df)
+                # logging.error("query_write_api : %s ", metric)
+                temp_df = metric_df.copy()
+            except:
+                logging.error("query_write_api Can't query %s data", metric)
+                temp_df[instance_key + '_' + metric] = np.nan
+                logging.error(str(traceback.format_exc()))
+            
+            if "type" not in metric_dict[metric]:
+                logging.error("metric dict must have key named type!")
+            else:
+                if len(temp_df) != 0:
+                    if metric_dict[metric]["type"] == "current":
+                        current_df = pd.concat([current_df, temp_df], axis=1)
+                    elif metric_dict[metric]["type"] == "prediction":
+                        prediction_df = pd.concat([prediction_df, temp_df], axis=1)
+                    else:
+                        logging.error("key of type must be current or prediction!")
+                else:
+                    logging.error("query metric %s, result=%s", metric, "Empty DataFrame")
+    
+    current_df = current_df.dropna(how="all", axis=1)
+    prediction_df = prediction_df.dropna(how="all", axis=1)
+    
+    return current_df, prediction_df
+
+
+def write_timeseries_result(batch_context, class_, result_dict):
+    """
+    result = {
+        "instance_key_1": {
+            "timestamp": ,
+            "Domain.metric_1": {
+                "resolution": ,
+                "value": metric_value,
+            },
+            "Domain.metric_2": {
+                "resolution": ,
+                "value": metric_value,
+            },
+        },
+        "instance_key_2": {
+            "timestamp": ,
+            "Domain.metric_1": {
+                "resolution": ,
+                "value": metric_value,
+            },
+            "Domain.metric_2": {
+                "resolution": ,
+                "value": metric_value,
+            },
+        },
+    }
+    """
+    
+    for instance in batch_context.find_instances(class_):
+        instance_key = instance.key.split("|")[-1]
+        # logging.error("Instance String: %s", instance_key)
+        if instance_key in result_dict:
+            if 'timestamp' in result_dict[instance_key] :
+                TIMESTAMP = result_dict[instance_key]['timestamp']
+            for metric_key, metric_value in result_dict[instance_key].items():
+
+                if metric_key != 'timestamp':
+
+                    if len(metric_key.split(".")) != 2:
+                        logging.error("metric_key should be Domain.Metric")
+                        continue
+                    # logging.error("write metric: %s, instance: %s", metric_key, instance.key)
+                    if isinstance(metric_value["value"], (np.int64, int, float)):
+                        if metric_value["value"] != -1:
+                            try:
+                                data = pd.DataFrame(data = [metric_value["value"]],
+                                                    index = [TIMESTAMP],
+                                                    columns = [metric_key.split('.')[-1]])
+                                instance.write_timeseries(metric = MetricName.parse(metric_key),
+                                                        resolution = metric_value["resolution"],
+                                                        values = data)
+                                # logging.error("write current timeseries data, metric: %s, instance: %s", metric_key, instance.key)
+                            except:
+                                logging.error("write current timeseries data failed, instance: %s", instance_key)
+                    else:
+                        if len(metric_value["value"]) > 0:
+                            try:
+                                instance.write_timeseries(metric = MetricName.parse(metric_key),
+                                                        resolution = metric_value["resolution"],
+                                                        values = metric_value["value"])
+                                # logging.error("write predicted timeseries data, metric: %s, instance: %s", metric_key, instance.key)
+                            except:
+                                logging.error("write predicted timeseries data failed, instance: %s", instance_key)
+                        else:
+                            logging.error("can't write empty dataframe, metric: %s, instance: %s", metric_key, instance.key)

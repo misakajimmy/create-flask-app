@@ -7,37 +7,60 @@
 
 from datetime import date, datetime
 from typing import List
+import ast
 
+from .model import TwinsModel, TwinDomain
 from .twins import TwinsAuthor, TwinsTag, TwinsScene, TwinsIndustry, ModelPackage
 from .. import db
+
+
+def ast_str_list(list):
+    res = []
+    for i in list:
+        res.append(i.s)
+    return res
+
+
+def get_value(code: str, val: str):
+    expr_ast = ast.parse(code)
+
+    for b in expr_ast.body:
+        if type(b).__name__ == 'Assign':
+            index = 0
+            res = {}
+            if b.targets[0].id == val:
+                for k in b.value.keys:
+                    key = k.s
+                    value = ast_str_list(b.value.values[index].elts)
+                    res[key] = value
+                    index += 1
+                return res
 
 
 class TwinsAlgorithm(db.Document):
     """算法表"""
     __tablename__ = 't_twins_algorithm'
 
-    # industry = db.ReferenceField(TwinsIndustry, commnet='算法行业')
-    scene = db.ReferenceField(TwinsScene, commnet='算法场景')
-    industry = db.ReferenceField(TwinsIndustry, commnet='算法行业')
-    name = db.StringField(required=True, unique=True, null=False, default='', comment='算法名称')
-    chinese_name = db.StringField(default='', comment='算法中文名称')
-    description = db.StringField(default='', comment='算法描述')
-    tags = db.ListField(db.ReferenceField(TwinsTag), default=[], comment='标签')
-    version = db.StringField(default='0.1.0', comment='版本')
-    author = db.ReferenceField(TwinsAuthor)
+    model = db.ReferenceField(TwinsModel, commnet='数孪')
+    code = db.StringField(default='', comment='代码')
+    inputField = db.ListField(default=[], comment='输入数据')
+    outField = db.ListField(default=[], comment='输出数据')
 
-    def add_tags(self, tags: List[str]):
-        model_tags = TwinsTag.get_tags(tags=tags)
-        for tag in model_tags:
-            if tag not in self.tags:
-                self.tags.append(tag)
-        self.save()
+    def format_domains(self):
+        return {
+            'input': self.inputField,
+            'output': self.outField,
+        }
 
-    def delete_tags(self, tags: List[str]):
-        model_tags = TwinsTag.get_tags(tags=tags)
-        for tag in model_tags:
-            if tag in self.tags:
-                self.tags.remove(tag)
+    def rename(self, side, id, name):
+        if side == 'input':
+            for f in self.inputField:
+                if f['field'] == id:
+                    f['chinese'] = name
+        if side == 'output':
+            for f in self.outField:
+                if f['field'] == id:
+                    f['chinese'] = name
         self.save()
 
     @staticmethod
@@ -47,29 +70,39 @@ class TwinsAlgorithm(db.Document):
 
     @staticmethod
     def create(
-            name: str, chinese_name: str, description: str, version: str, tags: List[str],
-            scene_name: str, industry_name: str, author_name: str,
+            model: TwinsModel, code: str,
     ):
-        # 检查算法是否存在
-        if TwinsAlgorithm.exist(name):
-            return {'code': 'DATA_EXIST', 'msg': '算法已存在'}
-        author = TwinsAuthor.get(author_name)
-        industry = TwinsIndustry.get(industry_name)
-        scene = TwinsScene.get(name=scene_name, industry=industry)
-        model_tags = TwinsTag.get_tags(tags=tags)
+        if code is None or code == '':
+            return None
+        input_values = get_value(code, 'INPUT_METRIC_LIST')
+        output_values = get_value(code, 'OUTPUT_METRIC_LIST')
+        input_field = []
+        for key in input_values:
+            for v in input_values[key]:
+                input_field.append({
+                    'domain': key,
+                    'field': v,
+                    'chinese': ''
+                })
+        output_field = []
+        for key in output_values:
+            for v in output_values[key]:
+                output_field.append({
+                    'domain': key,
+                    'field': v,
+                    'chinese': ''
+                })
 
         twins_algorithm = TwinsAlgorithm(
-            scene=scene,
-            industry=industry,
-            name=name,
-            chinese_name=chinese_name,
-            description=description,
-            tags=model_tags,
-            author=author,
-            version=version
+            model=model,
+            code=code,
+            inputField=input_field,
+            outField=output_field
         )
         twins_algorithm.save()
-        return {'code': 'OK', 'msg': '算法创建成功', 'data': twins_algorithm}
+        model.algorithm = twins_algorithm
+        return twins_algorithm
+        # return {'code': 'OK', 'msg': '算法创建成功', 'data': twins_algorithm}
 
 
 class TwinsAlgorithmSimilar(db.Document):

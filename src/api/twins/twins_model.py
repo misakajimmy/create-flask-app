@@ -588,3 +588,28 @@ def list_domain():
 
     domains = TwinDomain.format_domains(model.domains)
     return api_return('OK', '数域查询成功', domains)
+
+
+###################################################################
+# 重命名算法输入输出接口
+###################################################################
+@api.route('/model/algorithm/rename', methods=['POST'])
+# @need_login
+def algorithm_input_output_rename():
+    model_id = str(g.request_data.get('model', '')).strip()
+    side = str(g.request_data.get('side', '')).strip()
+    put_id = str(g.request_data.get('id', '')).strip()
+    chinese = str(g.request_data.get('chinese', '')).strip()
+
+    if not model_id:
+        return api_return('PARAM_NOT_FOUND', '缺少数孪模型ID')
+    if not side or not put_id or not chinese:
+        return api_return('PARAM_NOT_FOUND', '缺少数据')
+
+    model = TwinsModel.objects(id=model_id).first()
+    if not model:
+        return api_return('DATA_NOT_FOUND', '数孪模型不存在')
+
+    if model.algorithm != None:
+        model.algorithm.rename(side, put_id, chinese)
+    return api_return('OK', '算法接口名称更新成功', model.format_model())

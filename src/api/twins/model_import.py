@@ -12,6 +12,7 @@ from src import storage
 from src.api import api, need_login
 import tarfile
 
+from src.model.algorithm import TwinsAlgorithm
 from src.model.twins import ModelPackage
 from src.model.model import TwinsModel, TwinDomain, TwinDictionary, TwinDictionaryColumn, TwinDomainsColumn
 from src.response import api_return
@@ -62,13 +63,26 @@ def decode_models(path, package, images, author):
         chinese = ''
         icon = ''
         icon_url = ''
+        code = ''
+        print(data)
         try:
             name = data['attributes']['name']
             chinese = data['attributes']['label']['i18n']['zh-CN']
+        except:
+            pass
+
+        try:
             icon = data['attributes']['icon']
             icon_url = own_avatar_domain + bucket_name + '/' + images[icon.split('/')[-1]]
         except:
             pass
+
+        try:
+            code = data['skeleton']
+        except:
+            pass
+
+        print(code)
 
         twin_model = TwinsModel.create(
             package=package,
@@ -79,6 +93,12 @@ def decode_models(path, package, images, author):
             icon_url=icon_url,
             model_type=''
         )
+        if twin_model['code'] == 'OK':
+            model = twin_model['data']
+            algorithm = TwinsAlgorithm.create(model, code)
+            if algorithm is not None:
+                model.algorithm = algorithm
+                model.save()
         res[data['_id']] = twin_model
         if twin_model['code'] == 'OK':
             models.append(twin_model['data'])
@@ -212,6 +232,5 @@ def model_import():
 
         res = package.format()
         return api_return('OK', '模型上传成功', res)
-
 
     return api_return('OK', '模型上传成功', )

@@ -314,6 +314,7 @@ class TwinsModel(db.Document):
     author = db.ReferenceField(TwinsAuthor)
     create_time = db.DateTimeField(null=False, default=datetime.now(), comment='创建时间')
     three_model = db.StringField(default='', comment='图标地址')
+    algorithm = db.ReferenceField('TwinsAlgorithm', comment='算法')
     update_time = db.DateTimeField(
         null=False,
         default=datetime.now(),
@@ -383,7 +384,7 @@ class TwinsModel(db.Document):
         return {'code': 'OK', 'msg': '数孪创建成功', 'data': twins_model}
 
     def format_model(self):
-        return {
+        model = {
             '_id': str(self.id),
             'name': self.name,
             'chinese_name': self.chinese_name,
@@ -399,6 +400,9 @@ class TwinsModel(db.Document):
             'version': self.package.version,
             'three_model': self.three_model,
         }
+        if self.algorithm is not None:
+            model['algorithm'] = self.algorithm.format_domains()
+        return model
 
     @staticmethod
     def format_models(models):
