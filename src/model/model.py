@@ -445,6 +445,8 @@ class TwinsModel(db.Document):
         }
         if icon:
             res['attributes']['icon'] = "/api/v2/images/" + icon
+        if self.algorithm:
+            res['skeleton'] = self.algorithm.code
         return res
 
 
